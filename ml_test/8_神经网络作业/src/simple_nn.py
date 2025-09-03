@@ -79,9 +79,7 @@ def softmax_loss(Z, y):
     """
 
     ### 你的代码开始
-    # 数值稳定的 log-sum-exp 计算
-    max_Z = np.max(Z, axis=1, keepdims=True)
-    log_sum_exp = np.log(np.sum(np.exp(Z - max_Z), axis=1)) + max_Z.flatten()
+    log_sum_exp = np.log(np.sum(np.exp(Z), axis=1))
 
     # 获取正确类别的 logits
     correct_logits = Z[np.arange(Z.shape[0]), y]
@@ -92,14 +90,20 @@ def softmax_loss(Z, y):
 
 
 def softmax_regression_epoch(X, y, theta, lr = 0.1, batch=100):
-    """ 使用步长 lr 和指定的批次大小，对数据运行单轮 小批量梯度下降 进行 softmax 回归。
+    """ 使用步长 lr 和指定的批次大小，对数据运行单轮 小批量梯度下降
+    进行 softmax 回归。
     此函数会修改 θ 矩阵，并迭代 X 中的批次，但不对顺序进行随机化。
 
     参数：
     X (np.ndarray[np.float32])：大小为
     (num_examples x input_dim) 的二维输入数组。
-    y (np.ndarray[np.uint8])：大小为 (num_examples,) 的一维类别标签数组。
-    theta (np.ndarrray[np.float32])：softmax 回归的二维数组参数，形状为 (input_dim, num_classes)。
+
+    y (np.ndarray[np.uint8])：大小为 (num_examples,)
+    的一维类别标签数组。
+
+    theta (np.ndarrray[np.float32])：softmax 回归的二维数组参数，
+    形状为 (input_dim, num_classes)。
+
     lr (float)：SGD 的步长（学习率）。
     batch (int)：SGD 小批次的大小。
 
@@ -108,10 +112,26 @@ def softmax_regression_epoch(X, y, theta, lr = 0.1, batch=100):
     """
 
     ### 你的代码开始
+    m,n = X.shape
+    k = theta.shape[1]
+    # 将数据分为小批量
+    for i in range(0,m,batch):
+        X_batch = X[i:i+batch,:]
+        y_batch = y[i:i+batch]
+        batch_m = X_batch.shape[0]
+        # n维输入转为k维对数几率
+        hx = X_batch.dot(theta)
 
-    pass
+        z = np.exp(hx) / np.sum(np.exp(hx), axis=1,keepdims=True)
+        # 创建独热编码矩阵 - 使用方法1
+        ey = np.zeros((batch_m, k))
+        ey[np.arange(batch_m), y_batch] = 1  # 这里创建独热编码
+
+        gradient = X_batch.T @ (z - ey) / batch_m
+
+        theta -= lr * gradient
+
     ### 你的代码结束
-
 
 def nn_epoch(X, y, W1, W2, lr = 0.1, batch=100):
     """ 对由权重 W1 和 W2 定义的双层神经网络（无偏差项）运行一个 小批量梯度下降 迭代轮次：
@@ -132,7 +152,32 @@ def nn_epoch(X, y, W1, W2, lr = 0.1, batch=100):
     """
 
     ### 你的代码开始
-    pass
+    for i in range(0,X.shape[0],batch):
+        X_batch = X[i:i+batch,:]
+        y_batch = y[i:i+batch]
+        batch_m = X_batch.shape[0]
+        k = W2.shape[1]
+        # 首先是前向传播
+        z1 = X_batch    # 第一层的输入
+        z2 = z1.dot(W1) # 第一层的输出
+        z2_relu = np.maximum(0, z2) # 第一层的输出被激活
+        logits = z2_relu.dot(W2)    # 第二层的输出
+
+        # 反向传播
+        # 计算输出层的梯度
+        normalize1 = np.exp(logits) / np.sum(np.exp(logits), axis=1,keepdims=True)
+        ey = np.zeros((batch_m, k))
+        ey[np.arange(batch_m), y_batch] = 1  # 这里创建独热编码
+        g2 = normalize1 - ey
+        # 计算隐藏层梯度
+        relu_mask = (z2>0).astype(np.float32)   # 计算ReLU = max(0,x)激活函数的导数 0,1
+        g1 = relu_mask * (g2 @ W2.T)            # 根据链式法则计算
+
+        grad_W2 = (z2_relu.T @ g2) / batch_m
+        grad_W1 = (X_batch.T @ g1) / batch_m
+
+        W2 -= lr * grad_W2
+        W1 -= lr * grad_W1
     ### 你的代码结束
 
 
