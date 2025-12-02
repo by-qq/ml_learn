@@ -1,0 +1,115 @@
+class Blackjack:
+    cards = [2,3,4,5,6,7,8,9,"J","Q","K","A"]
+    b_nums = []
+    p_nums = []
+
+    def __init__(self,identity,p_input):
+        # 庄家的身份是电脑说明并不应该初始化这个
+        self.identity = identity    # 判别庄家和玩家的身份,todo:这有问题
+        self.p_input = p_input      # 玩家输入的内容
+        for i in range(2):
+            card = random.choice(self.cards)
+            card_num = self.r_num(card,self.b_nums)
+            self.b_nums.append(card_num)
+        for i in range(2):
+            card = random.choice(self.cards)
+            card_num = self.r_num(card,self.p_nums)
+            self.p_nums.append(card_num)
+
+    def r_num(self,card,nums_total):
+        # 定义抽取到的不同卡牌的返回内容
+        if card.isdigit():
+            return card
+        elif card in ["J","Q","K"]:
+            return 10
+        else:   # 抽取到A，需要判定下返回1,还是返回11
+            if 21 - nums_total > 11:
+                return 11
+            else:
+                return 1
+
+    def Bust(self,nums:list): # 判定是不是爆点
+        if sum(nums) > 21:
+            # 直接返回失败，结束游戏
+            return f""
+        else:  # 没有爆点，需要继续询问是否继续抽取
+            if self.identity == "Player":
+                return f"Do you want to continue drawing?"
+
+
+    def choose(self):
+        # 定义抽取动作：针对不同的玩家有不同的抽取动作
+        if self.identity == "Banker":   # 针对庄家的抽取动作
+            # 获取到现在庄家的点数b_num,这里需要有一个字典b_nums
+            b_nums_total = sum(self.b_nums)
+            if b_nums_total >= 17:
+                # 不再抽取,并等待玩家是否需要再次抽取
+                ...
+            else:
+                # 抽取，并将抽取到的内容放到本身的字典中
+                card = random.choice(Blackjack.cards)
+                card_num = self.r_num(card,b_nums_total)
+                self.b_nums.append(card_num)
+                self.Bust(self.b_nums)
+
+        if self.identity == "Player":   # 针对玩家的抽取动作
+            p_nums_total = sum(self.p_nums)
+            # 需要通过玩家的输入input_content 来判断是否进行抽取
+            if self.p_input == "y":
+                # 继续抽取,抽取完成之后需要判断是否爆点（Bust）了，这里需要p_nums
+                card = random.choice(Blackjack.cards)
+                card_num = self.r_num(card,p_nums_total)
+                self.p_nums.append(card_num)
+                self.Bust(self.p_nums)
+            else:       # 输入内容是n，表示不继续抽取，并且说明没有爆点，可以直接进行比较
+                self.b_p_compare(sum(self.b_nums) , p_nums_total)
+
+    def b_p_compare(self,b_nums_total , p_nums_total):  # 如果玩家选择不继续抽取，需要判定玩家和庄家点数谁大
+        if b_nums_total > p_nums_total:
+            return f"You have lost"
+        elif b_nums_total == p_nums_total:
+            return f"You drew with your opponent"
+        else:
+            return f"You win"
+
+该游戏的庄家是程序本身自动进行的，是不是不应该初始化这个identity，但我下边又需要这个来判断程序操作的机型，这如何进行修改
+
+2、random.choice如何实现是无放回的从列表中随机抽取，不要使用numpy.random.choice
+
+
+3、第二题：我需要如何开始思考？
+4、如何使用keras的文本处理层实现对文本的词元化处理？
+5、vectorizer = layers.TextVectorization(
+        max_tokens=max_tokens,
+        output_mode='int',
+        output_sequence_length=None,  # 不固定输出长度
+        standardize=None,  # 不进行标准化处理
+        split='whitespace',  # 按空格分词
+    )
+
+vocab = vectorizer.get_vocabulary()
+    word_index = dict(zip(vocab, range(len(vocab))))
+这里是为什么，最后两行不理解，为什么需要转化成字典
+
+
+
+6、@app.post("/")
+async def salary_by_district(file: UploadFile):
+    file_bytes = await file.read()
+    data = pd.read_csv(io.BytesIO(file_bytes))
+    data_mean = data.groupby("district").agg({"salary": "mean"})
+    data_max = data.groupby("district").agg({"salary": "max"})
+    data_min = data.groupby("district").agg({"salary": "min"})
+    data_total = pd.concat([data_mean, data_max, data_min], axis=1)
+    data_total.to_excel("salary_by_district.xlsx")
+
+    return StreamingResponse()
+如何使用流式文件的形式将xlsx文件返回
+
+7、company_count.plot(kind="bar")
+    
+    output = io.BytesIO()
+    plt.savefig(output,'company_count_chart.png')
+    output.seek(0)
+这里为什么出错，savefig不能直接创建BytesIO对象吗
+
