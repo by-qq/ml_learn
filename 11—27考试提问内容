@@ -1,3 +1,10 @@
+第一题的文件名为blackjack.py
+第二题的文件名为my_token.py
+第三题的文件名为analyze.py
+
+
+以下是提问内容
+1、
 class Blackjack:
     cards = [2,3,4,5,6,7,8,9,"J","Q","K","A"]
     b_nums = []
